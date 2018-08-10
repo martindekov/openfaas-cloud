@@ -61,7 +61,7 @@ func Handle(req []byte) string {
 		}
 
 		for _, customer := range customers {
-			if customer == pushEvent.Repository.Owner.Login {
+			if strings.ToLower(customer) == strings.ToLower(pushEvent.Repository.Owner.Login) {
 				found = true
 			}
 		}
@@ -69,7 +69,7 @@ func Handle(req []byte) string {
 
 			auditEvent := sdk.AuditEvent{
 				Message: "Customer not found",
-				Owner:   pushEvent.Repository.Owner.Login,
+				Owner:   strings.ToLower(pushEvent.Repository.Owner.Login),
 				Repo:    pushEvent.Repository.Name,
 				Source:  Source,
 			}
@@ -84,7 +84,7 @@ func Handle(req []byte) string {
 		msg := "refusing to build non-master branch: " + pushEvent.Ref
 		auditEvent := sdk.AuditEvent{
 			Message: msg,
-			Owner:   pushEvent.Repository.Owner.Login,
+			Owner:   strings.ToLower(pushEvent.Repository.Owner.Login),
 			Repo:    pushEvent.Repository.Name,
 			Source:  Source,
 		}
