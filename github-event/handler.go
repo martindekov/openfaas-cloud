@@ -24,7 +24,8 @@ func Handle(req []byte) string {
 	if eventHeader != "push" &&
 		eventHeader != "installation_repositories" &&
 		eventHeader != "integration_installation" &&
-		eventHeader != "installation" {
+		eventHeader != "installation" &&
+		eventHeader != "integration_installation_repositories" {
 
 		auditEvent := sdk.AuditEvent{
 			Message: "bad event: " + eventHeader,
@@ -36,7 +37,7 @@ func Handle(req []byte) string {
 		return fmt.Sprintf("%s cannot handle event: %s", Source, eventHeader)
 	}
 
-	if eventHeader == "push" {
+	if eventHeader == "push" || eventHeader == "integration_installation_repositories" {
 		headers := map[string]string{
 			"X-Hub-Signature": xHubSignature,
 			"X-GitHub-Event":  eventHeader,
