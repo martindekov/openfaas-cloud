@@ -1,12 +1,12 @@
 provider:
   name: faas
-  gateway: http://127.0.0.1:8080
+  gateway: http://md-gw.team-serverless.xyz
 
 functions:
   github-push:
     lang: go
     handler: ./github-push
-    image: functions/github-push:0.6.0
+    image: martindekov/github-push:0.6.0
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -27,7 +27,7 @@ functions:
   github-event:
     lang: go
     handler: ./github-event
-    image: functions/github-event:0.5.0
+    image: martindekov/github-event:0.5.0
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -44,7 +44,11 @@ functions:
   git-tar:
     lang: dockerfile
     handler: ./git-tar
+<<<<<<< 346af346d2df74dab8bac3e25912696a9010bb9f
     image: functions/of-git-tar:0.8.2
+=======
+    image: martindekov/of-git-tar:0.8.0
+>>>>>>> Add my own config
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -64,7 +68,7 @@ functions:
   buildshiprun:
     lang: go
     handler: ./buildshiprun
-    image: functions/of-buildshiprun:0.7.0
+    image: martindekov/of-buildshiprun:0.7.0
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -81,12 +85,12 @@ functions:
       - basic-auth-user
       - basic-auth-password
       - payload-secret
-#      - swarm-pull-secret
+      - swarm-pull-secret
 
   garbage-collect:
     lang: go
     handler: ./garbage-collect
-    image: functions/garbage-collect:0.4.0
+    image: martindekov/garbage-collect:0.4.0
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -105,9 +109,13 @@ functions:
   github-status:
     lang: go
     handler: ./github-status
+<<<<<<< 346af346d2df74dab8bac3e25912696a9010bb9f
     image: functions/github-status:0.2.1
     labels:
       role: openfaas-system
+=======
+    image: martindekov/github-status:0.2.0
+>>>>>>> Add my own config
     environment:
       write_debug: true
       read_debug: true
@@ -124,10 +132,14 @@ functions:
   import-secrets:
     lang: go
     handler: ./import-secrets
-    image: functions/import-secrets:0.3.0
+    image: martindekov/import-secrets:0.3.0
     labels:
+<<<<<<< 346af346d2df74dab8bac3e25912696a9010bb9f
       openfaas-cloud: "1"
       role: openfaas-system
+=======
+    openfaas-cloud: "1"
+>>>>>>> Add my own config
     environment:
       write_debug: true
       read_debug: true
@@ -141,9 +153,13 @@ functions:
   pipeline-log:
     lang: go
     handler: ./pipeline-log
+<<<<<<< 346af346d2df74dab8bac3e25912696a9010bb9f
     image: functions/pipeline-log:0.3.1
     labels:
       role: openfaas-system
+=======
+    image: martindekov/pipeline-log:0.3.1
+>>>>>>> Add my own config
     environment:
       write_debug: true
       read_debug: true
@@ -158,7 +174,7 @@ functions:
   list-functions:
     lang: go
     handler: ./list-functions
-    image: functions/list-functions:0.4.4
+    image: martindekov/list-functions:0.4.4
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -174,7 +190,7 @@ functions:
   audit-event:
     lang: go
     handler: ./audit-event
-    image: functions/audit-event:0.1.1
+    image: martindekov/audit-event:0.1.1
     labels:
       openfaas-cloud: "1"
     environment_file:
