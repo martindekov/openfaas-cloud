@@ -3,4 +3,4 @@ environment:
 #    private_key_filename: ""
 #    github_webhook_secret: Deprecated - use a secret named github-webhook-secret
     github_app_id: "15671"
-    report_status: "true"
+    report_status: "false"

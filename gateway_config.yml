@@ -1,21 +1,20 @@
 environment:
   customers_url: "https://raw.githubusercontent.com/martindekov/TheConfigRepo/master/CUSTOMERS"
   gateway_url:  http://gateway:8080/
-  gateway_public_url: https://cloud.o6s.io/
+  gateway_public_url: https://md-gw.team-serverless.xyz/
   audit_url: http://gateway:8080/function/audit-event
-  repository_url: md-reg.team-serverless.xyz
-  push_repository_url: docker-registry:5000 #docker.io/ofcommunity/
+  repository_url: docker.io/martindekov/ #md-reg.team-serverless.xyz
+  push_repository_url: docker.io/martindekov/ #docker-registry:5000 #docker.io/ofcommunity/
   basic_auth: true
   secret_mount_path: /var/openfaas/secrets
   builder_url: http://of-builder:8080/
-  s3_url: minio:9000 #cloud-minio.openfaas.svc.cluster.local:9000
-  s3_region: us-east-1
+  s3_url: s3.amazonaws.com #minio:9000 #openfaas-martin.s3.amazonaws.com  #openfaas-martin.s3.amazonaws.com:9000 #cloud-minio.openfaas.svc.cluster.local:9000
+  s3_region: eu-west-2
   s3_tls: false
-  s3_bucket: pipeline
+  s3_bucket: openfaas-martin
   readonly_root_filesystem: true
   scaling_min_limit: 1
   scaling_max_limit: 4
-
 # To use a shared Docker Hub account.
 #  repository_url: docker.io/ofcommunity/
 #  push_repository_url: docker.io/ofcommunity/

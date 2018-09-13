@@ -6,6 +6,7 @@ provider:
 # please remove the prefix of `system-`
 
 functions:
+<<<<<<< 147909ef7881adf32af07b1a911826b04e69cd4a
   system-dashboard:
     lang: node8-express
     handler: ./of-cloud-dashboard
@@ -28,8 +29,7 @@ functions:
       combine_output: "false"
       public_url: "https://md-gw.team-serverless.xyz"
  # Comment out if not using public pretty-URL
-<<<<<<< 346af346d2df74dab8bac3e25912696a9010bb9f
-      pretty_url: "https://user.o6s.io/function"
+      pretty_url: "http://user.md.team-serverless.xyz:8082/function"
       query_pretty_url: "true"
 
   system-list-functions:
