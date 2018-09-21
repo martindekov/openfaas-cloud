@@ -175,3 +175,153 @@ func Test_getReadOnlyRootFS_override(t *testing.T) {
 		t.Fail()
 	}
 }
+func Test_getMemoryLimit_Swarm(t *testing.T) {
+	tests := []struct {
+		title         string
+		memoryLimit   string
+		expectedLimit string
+	}{
+		{
+			title:         "Kubernetes environment variables missing and limit is set",
+			memoryLimit:   "30",
+			expectedLimit: "30m",
+		},
+		{
+			title:         "Kubernetes environment variables missing and limit is unset",
+			memoryLimit:   "",
+			expectedLimit: "128m",
+		},
+	}
+	envVar := "function_memory_limit_mb"
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			os.Setenv(envVar, test.memoryLimit)
+			limit := getMemoryLimit()
+			if limit != test.expectedLimit {
+				t.Errorf("Test failed! Expected: `%v` got: `%v`.", test.expectedLimit, limit)
+			}
+		})
+	}
+}
+
+func Test_getMemoryLimit_Kubernetes(t *testing.T) {
+	tests := []struct {
+		title           string
+		exampleVariable string
+		memoryLimit     string
+		expectedLimit   string
+	}{
+		{
+			title:           "Kubernetes environment variables present and limit is set",
+			exampleVariable: "KUBERNETES_SERVICE_PORT",
+			memoryLimit:     "30",
+			expectedLimit:   "30Mi",
+		},
+		{
+			title:           "Kubernetes environment variables present and limit is unset",
+			exampleVariable: "KUBERNETES_SERVICE_PORT",
+			memoryLimit:     "",
+			expectedLimit:   "128Mi",
+		},
+	}
+	exampleValue := "example_value"
+	envVar := "function_memory_limit_mb"
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			os.Setenv(test.exampleVariable, exampleValue)
+			os.Setenv(envVar, test.memoryLimit)
+			limit := getMemoryLimit()
+			if limit != test.expectedLimit {
+				t.Errorf("Test failed! Expected: `%v` got: `%v`.", test.expectedLimit, limit)
+			}
+		})
+	}
+}
+
+func Test_existingVariable_Existent(t *testing.T) {
+	tests := []struct {
+		title string
+		value string
+	}{
+		{
+			title: "Variable exist and set",
+			value: "example",
+		},
+		{
+			title: "Variable exist but unset",
+			value: "",
+		},
+	}
+
+	key := "env_var"
+	expectedBool := true
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			os.Setenv(key, test.value)
+			_, exists := os.LookupEnv(key)
+			//exists := existingVariable(key)
+			if exists != expectedBool {
+				t.Errorf("Variable existance should be : `%v` got: `%v`", expectedBool, exists)
+			}
+		})
+	}
+}
+
+func Test_existingVariable_nonExistent(t *testing.T) {
+	t.Run("Variable does not exist", func(t *testing.T) {
+		expectedBool := false
+		key := "place_holder"
+		_, exists := os.LookupEnv(key)
+
+		if exists != expectedBool {
+			t.Errorf("Should be:`%v` got:`%v`", expectedBool, exists)
+		}
+	})
+}
+
+func Test_getConfig(t *testing.T) {
+
+	var configOpts = []struct {
+		name         string
+		value        string
+		defaultValue string
+		isConfugured bool
+	}{
+		{
+			name:         "scaling_max_limit",
+			value:        "",
+			defaultValue: "4",
+			isConfugured: true,
+		},
+		{
+			name:         "scaling_max_limit",
+			value:        "10",
+			defaultValue: "4",
+			isConfugured: true,
+		},
+		{
+			name:         "random_config",
+			value:        "",
+			defaultValue: "18",
+			isConfugured: false,
+		},
+	}
+	for _, config := range configOpts {
+		t.Run(config.name, func(t *testing.T) {
+			if config.isConfugured {
+				os.Setenv(config.name, config.value)
+			}
+			value := getConfig(config.name, config.defaultValue)
+			want := config.defaultValue
+			if len(config.value) > 0 {
+				want = config.value
+			}
+
+			if value != want {
+				t.Errorf("want %s, but got %s", want, value)
+			}
+		})
+	}
+}

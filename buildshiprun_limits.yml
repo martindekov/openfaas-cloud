@@ -1,2 +1,6 @@
 environment:
-  default_memory_limit: 30
+<<<<<<< Updated upstream
+  function_memory_limit_mb: 128 #The differences in formatting are handled by buildshiprun
+=======
+  function_memory_limit_mb: 30
+>>>>>>> Stashed changes

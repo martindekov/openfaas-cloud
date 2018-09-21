@@ -1,4 +1,5 @@
 environment:
+<<<<<<< HEAD
   customers_url: "https://raw.githubusercontent.com/martindekov/TheConfigRepo/master/CUSTOMERS"
   gateway_url:  http://gateway:8080/
   gateway_public_url: https://md-gw.team-serverless.xyz/
@@ -15,6 +16,39 @@ environment:
   readonly_root_filesystem: true
   scaling_min_limit: 1
   scaling_max_limit: 4
+=======
+# URLs
+  gateway_url:  http://gateway.openfaas:8080/
+  gateway_public_url: https://cloud.o6s.io/
+  audit_url: http://gateway.openfaas:8080/function/audit-event
+  # Remove gateway_pretty_url if not using pretty URL
+  gateway_pretty_url: https://user.o6s.io/function
+
+# Security
+  customers_url: "https://raw.githubusercontent.com/openfaas/openfaas-cloud/master/CUSTOMERS"
+  basic_auth: true
+  secret_mount_path: /var/openfaas/secrets
+
+# Container builder
+  repository_url: docker.io/ofcommunity/
+  push_repository_url: docker.io/ofcommunity/
+  builder_url: http://of-builder.openfaas:8080/
+
+# Logging
+  s3_url: cloud-minio.openfaas.svc.cluster.local:9000
+  s3_region: us-east-1
+  s3_tls: false
+  s3_bucket: pipeline
+
+# Function policy
+  readonly_root_filesystem: true
+  scaling_min_limit: 1
+  scaling_max_limit: 4
+  prometheus_host: prometheus.openfaas
+  prometheus_port: 9090
+  metrics_window: 60m
+
+>>>>>>> 1821c7995ba1c5a82e492a40d9886a56f4a1dcca
 # To use a shared Docker Hub account.
 #  repository_url: docker.io/ofcommunity/
 #  push_repository_url: docker.io/ofcommunity/

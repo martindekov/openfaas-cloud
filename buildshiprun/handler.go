@@ -140,18 +140,10 @@ func Handle(req []byte) string {
 
 		log.Printf("Deploying %s as %s", imageName, serviceValue)
 
-		defaultMemoryLimit := os.Getenv("default_memory_limit")
-		if len(defaultMemoryLimit) == 0 {
-			defaultMemoryLimit = "20m"
-		}
-		scalingMinLimit := os.Getenv("scaling_min_limit")
-		if len(defaultMemoryLimit) == 0 {
-			scalingMinLimit = "1"
-		}
-		scalingMaxLimit := os.Getenv("scaling_max_limit")
-		if len(defaultMemoryLimit) == 0 {
-			scalingMaxLimit = "4"
-		}
+		defaultMemoryLimit := getMemoryLimit()
+
+		scalingMinLimit := getConfig("scaling_min_limit", "1")
+		scalingMaxLimit := getConfig("scaling_max_limit", "4")
 
 		readOnlyRootFS := getReadOnlyRootFS()
 
@@ -162,13 +154,13 @@ func Handle(req []byte) string {
 			Image:   imageName,
 			Network: "func_functions",
 			Labels: map[string]string{
-				"Git-Cloud":      "1",
-				"Git-Owner":      event.Owner,
-				"Git-Repo":       event.Repository,
-				"Git-DeployTime": strconv.FormatInt(time.Now().Unix(), 10), //Unix Epoch string
-				"Git-SHA":        event.SHA,
-				"faas_function":  serviceValue,
-				"app":            serviceValue,
+				sdk.FunctionLabelPrefix + "git-cloud":      "1",
+				sdk.FunctionLabelPrefix + "git-owner":      event.Owner,
+				sdk.FunctionLabelPrefix + "git-repo":       event.Repository,
+				sdk.FunctionLabelPrefix + "git-deploytime": strconv.FormatInt(time.Now().Unix(), 10), //Unix Epoch string
+				sdk.FunctionLabelPrefix + "git-sha":        event.SHA,
+				"faas_function":                            serviceValue,
+				"app":                                      serviceValue,
 				"com.openfaas.scale.min": scalingMinLimit,
 				"com.openfaas.scale.max": scalingMaxLimit,
 			},
@@ -204,6 +196,15 @@ func Handle(req []byte) string {
 	status.AddStatus(sdk.StatusSuccess, fmt.Sprintf("deployed: %s", serviceValue), sdk.BuildFunctionContext(event.Service))
 	reportStatus(status)
 	return fmt.Sprintf("buildStatus %s %s", imageName, res.Status)
+}
+
+func getConfig(key string, defaultValue string) string {
+
+	res := os.Getenv(key)
+	if len(res) == 0 {
+		res = defaultValue
+	}
+	return res
 }
 
 // createPipelineLog sends a log to pipeline-log and will
@@ -452,4 +453,27 @@ func getRegistryAuthSecret() string {
 		return strings.TrimSpace(string(res))
 	}
 	return ""
+}
+
+func getMemoryLimit() string {
+	const swarmSuffix = "m"
+	const kubernetesSuffix = "Mi"
+
+	suffix := swarmSuffix
+
+	kubernetesPort := "KUBERNETES_SERVICE_PORT"
+	memoryLimit := os.Getenv("function_memory_limit_mb")
+
+	if _, exists := os.LookupEnv(kubernetesPort); exists {
+		suffix = kubernetesSuffix
+	}
+
+	const defaultMemoryLimit = "128"
+
+	unit := defaultMemoryLimit
+	if len(memoryLimit) > 0 {
+		unit = memoryLimit
+	}
+
+	return fmt.Sprintf("%s%s", unit, suffix)
 }

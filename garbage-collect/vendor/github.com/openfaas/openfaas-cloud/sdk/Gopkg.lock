@@ -2,14 +2,20 @@
 
 
 [[projects]]
+  name = "github.com/alexellis/hmac"
+  packages = ["."]
+  revision = "d5d71edd7bc74eb6ae4b99eccc6bda738435f43f"
+  version = "1.2"
+
+[[projects]]
   name = "github.com/openfaas/faas"
   packages = ["gateway/types"]
-  revision = "81334141832d6c4fc9b78e6b5e17e5330eca7606"
-  version = "0.8.2"
+  revision = "c86de503c7a20a46645239b9b081e029b15bf69b"
+  version = "0.8.11"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a47be49e1ed501cca1024b2e2f6da3e8f2e24aa08479acb84e9d630a5c150956"
+  inputs-digest = "cbb5ffd7a070a945aad1f1889e544b41bb16bbe883df7f3b14ffe5d98e19c6c3"
   solver-name = "gps-cdcl"
   solver-version = 1
