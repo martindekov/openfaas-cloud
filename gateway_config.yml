@@ -1,10 +1,12 @@
 environment:
 # URLs
-  gateway_url:  http://gateway.openfaas:8080/
+  gateway_url:  http://gateway:8080/
   gateway_public_url: https://cloud.o6s.io/
-  audit_url: http://gateway.openfaas:8080/function/audit-event
+  audit_url: http://gateway:8080/function/audit-event
   # Remove gateway_pretty_url if not using pretty URL
   gateway_pretty_url: https://user.o6s.io/function
+  # Comment out if using Swarm
+  dns_suffix: openfaas
 
 # Security
   customers_url: "https://raw.githubusercontent.com/openfaas/openfaas-cloud/master/CUSTOMERS"
@@ -14,7 +16,7 @@ environment:
 # Container builder
   repository_url: docker.io/ofcommunity/
   push_repository_url: docker.io/ofcommunity/
-  builder_url: http://of-builder.openfaas:8080/
+  builder_url: http://of-builder:8080/
 
 # Logging
   s3_url: cloud-minio.openfaas.svc.cluster.local:9000

@@ -98,7 +98,10 @@ func Handle(req []byte) string {
 func getLogs(status *sdk.CommitStatus, event *sdk.Event) (string, error) {
 	client := &http.Client{}
 	var err error
+	suffix := os.Getenv("dns_suffix")
 	gatewayURL := os.Getenv("gateway_url")
+
+	gatewayURL = sdk.CreateServiceURL(gatewayURL, suffix)
 	// TODO: support logs for different commit status contexts
 	url := fmt.Sprintf("%s/function/pipeline-log?repoPath=%s/%s&commitSHA=%s&function=%s", gatewayURL, event.Owner, event.Repository, event.SHA, event.Service)
 	log.Println(url)

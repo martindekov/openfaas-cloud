@@ -35,7 +35,10 @@ func Handle(req []byte) string {
 		log.Printf("Removing all functions for %s", owner)
 	}
 
+	suffix := os.Getenv("dns_suffix")
 	gatewayURL := os.Getenv("gateway_url")
+
+	gatewayURL = sdk.CreateServiceURL(gatewayURL, suffix)
 	deployedFunctions, err := listFunctions(owner, gatewayURL)
 
 	if err != nil {
