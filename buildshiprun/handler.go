@@ -94,7 +94,12 @@ func Handle(req []byte) string {
 		sdk.PostAudit(auditEvent)
 
 		status.AddStatus(sdk.StatusFailure, err.Error(), sdk.BuildFunctionContext(event.Service))
-		reportStatus(status)
+		if event.SCM == "github" {
+			reportStatus(status)
+		}
+		if event.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 
 		return auditEvent.Message
 	}
@@ -115,7 +120,12 @@ func Handle(req []byte) string {
 		sdk.PostAudit(auditEvent)
 
 		status.AddStatus(sdk.StatusFailure, err.Error(), sdk.BuildFunctionContext(event.Service))
-		reportStatus(status)
+		if event.SCM == "github" {
+			reportStatus(status)
+		}
+		if event.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		return auditEvent.Message
 	}
 
@@ -128,7 +138,12 @@ func Handle(req []byte) string {
 		msg := "repository_url env-var not set"
 		fmt.Fprintf(os.Stderr, msg)
 		status.AddStatus(sdk.StatusFailure, msg, sdk.BuildFunctionContext(event.Service))
-		reportStatus(status)
+		if event.SCM == "github" {
+			reportStatus(status)
+		}
+		if event.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(1)
 	}
 
@@ -149,7 +164,12 @@ func Handle(req []byte) string {
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusAccepted {
 		msg := "Unable to build image, check builder logs"
 		status.AddStatus(sdk.StatusFailure, msg, sdk.BuildFunctionContext(event.Service))
-		reportStatus(status)
+		if event.SCM == "github" {
+			reportStatus(status)
+		}
+		if event.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 
 		auditEvent.Message = fmt.Sprintf("buildshiprun failure: %s", msg)
 		sdk.PostAudit(auditEvent)
@@ -217,7 +237,12 @@ func Handle(req []byte) string {
 
 		if err != nil {
 			status.AddStatus(sdk.StatusFailure, err.Error(), sdk.BuildFunctionContext(event.Service))
-			reportStatus(status)
+			if event.SCM == "github" {
+				reportStatus(status)
+			}
+			if event.SCM == "gitlab" {
+				reportGitLabStatus(status)
+			}
 			log.Fatal(err.Error())
 			auditEvent.Message = fmt.Sprintf("buildshiprun failure: %s", err.Error())
 		} else {
@@ -229,7 +254,12 @@ func Handle(req []byte) string {
 
 	sdk.PostAudit(auditEvent)
 	status.AddStatus(sdk.StatusSuccess, fmt.Sprintf("deployed: %s", serviceValue), sdk.BuildFunctionContext(event.Service))
-	reportStatus(status)
+	if event.SCM == "github" {
+		reportStatus(status)
+	}
+	if event.SCM == "gitlab" {
+		reportGitLabStatus(status)
+	}
 	return fmt.Sprintf("buildStatus %s %s", imageName, res.Status)
 }
 
@@ -514,4 +544,36 @@ func getMemoryLimit() string {
 	}
 
 	return fmt.Sprintf("%s%s", unit, suffix)
+}
+
+// Needs adding changes to git-lab and merging of gitlab-status function
+func reportGitLabStatus(status *sdk.Status) {
+
+	if !enableStatusReporting() {
+		return
+	}
+
+	suffix := os.Getenv("dns_suffix")
+	gatewayURL := os.Getenv("gateway_url")
+	gatewayURL = sdk.CreateServiceURL(gatewayURL, suffix)
+
+	statusBytes, _ := json.Marshal(status)
+	statusReader := bytes.NewReader(statusBytes)
+	req, reqErr := http.NewRequest(http.MethodPost, gatewayURL+"function/gitlab-status", statusReader)
+	if reqErr != nil {
+		fmt.Printf("Unexpected error: `%s`", reqErr.Error())
+	}
+
+	client := http.Client{}
+
+	res, resErr := client.Do(req)
+	if resErr != nil {
+		fmt.Printf("Unexpected error: `%s`", resErr.Error())
+	}
+	defer res.Body.Close()
+
+	_, bodyErr := ioutil.ReadAll(res.Body)
+	if bodyErr != nil {
+		fmt.Printf("Unexpected error: `%s`", bodyErr.Error())
+	}
 }

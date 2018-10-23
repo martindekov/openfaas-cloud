@@ -271,16 +271,30 @@ func clone(pushEvent sdk.PushEvent) (string, error) {
 		return "", fmt.Errorf("cannot create user-dir: %s", userDir)
 	}
 
-	at := &githubAuthToken{
-		appID:          os.Getenv("github_app_id"),
-		installationID: pushEvent.Installation.ID,
-		privateKeyPath: sdk.GetPrivateKeyPath(),
+	var cloneURL string
+
+	if pushEvent.SCM == "github" {
+
+		at := &githubAuthToken{
+			appID:          os.Getenv("github_app_id"),
+			installationID: pushEvent.Installation.ID,
+			privateKeyPath: sdk.GetPrivateKeyPath(),
+		}
+
+		cloneURL, err = getRepositoryURL(pushEvent, at)
+		if err != nil {
+			return "", fmt.Errorf("cannot get repository url to clone: %t", err)
+		}
 	}
 
-	cloneURL, err := getRepositoryURL(pushEvent, at)
+	if pushEvent.SCM == "gitlab" {
 
-	if err != nil {
-		return "", fmt.Errorf("cannot get repository url to clone: %t", err)
+		tokenAPI, tokenErr := sdk.ReadSecret("gitlab-read-token")
+		if tokenErr != nil {
+			return "", fmt.Errorf("cannot read api token from GitLab: %s", tokenErr.Error())
+		}
+
+		cloneURL, err = formatGitLabCloneURL(pushEvent, tokenAPI)
 	}
 
 	git := exec.Command("git", "clone", cloneURL)
@@ -319,12 +333,17 @@ func deploy(tars []tarEntry, pushEvent sdk.PushEvent, stack *stack.Services, sta
 	c := http.Client{}
 	gatewayURL := os.Getenv("gateway_url")
 
-	for _, tarEntry := range tars {
-		fmt.Println("Deploying service - " + tarEntry.functionName)
+	for i, tarEntry := range tars {
 
-		status.AddStatus(sdk.StatusPending, fmt.Sprintf("%s function build started", tarEntry.functionName),
+		status.AddStatus(sdk.StatusPending, fmt.Sprintf("%s function build started %d", tarEntry.functionName, i),
 			sdk.BuildFunctionContext(tarEntry.functionName))
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+			delete(status.CommitStatuses, tarEntry.functionName)
+		}
 		// log.Printf(status.AuthToken)
 
 		fileOpen, err := os.Open(tarEntry.fileName)
@@ -492,4 +511,12 @@ func getShortSHA(sha string) string {
 		return sha
 	}
 	return sha[:7]
+}
+
+func formatGitLabCloneURL(pushEvent sdk.PushEvent, tokenAPI string) (string, error) {
+	url, urlErr := url.Parse(pushEvent.Repository.CloneURL)
+	if urlErr != nil {
+		return "", urlErr
+	}
+	return fmt.Sprintf("https://%s:%s@%s%s", pushEvent.Repository.Owner.Login, tokenAPI, url.Host, url.Path), nil
 }

@@ -45,7 +45,7 @@ functions:
   git-tar:
     lang: dockerfile
     handler: ./git-tar
-    image: functions/of-git-tar:0.8.14
+    image: martindekov/of-git-tar:gitlab-status
     labels:
       openfaas-cloud: "1"
       role: openfaas-system
@@ -60,11 +60,12 @@ functions:
     secrets:
       - payload-secret
       - private-key
+      - gitlab-api-token
 
   buildshiprun:
     lang: go
     handler: ./buildshiprun
-    image: functions/of-buildshiprun:0.8.7
+    image: martindekov/of-buildshiprun:gitlab-status
     labels:
       openfaas-cloud: "1"
       role: openfaas-system

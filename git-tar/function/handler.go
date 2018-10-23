@@ -60,15 +60,24 @@ func Handle(req []byte) []byte {
 		msg := fmt.Sprintf("cannot fetch stack file %s", getStackFileErr.Error())
 
 		status.AddStatus(sdk.StatusFailure, msg, sdk.StackContext)
-		reportStatus(status)
-
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		log.Printf(msg)
 		os.Exit(-1)
 	}
 
 	if !hasStackFile {
 		status.AddStatus(sdk.StatusFailure, "unable to find stack.yml", sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 
 		auditEvent := sdk.AuditEvent{
 			Message: "no stack.yml file found",
@@ -85,14 +94,24 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Println("Clone ", err.Error())
 		status.AddStatus(sdk.StatusFailure, "clone error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
 	if _, err := os.Stat(path.Join(clonePath, "template")); err == nil {
 		log.Println("Post clone check found a user-generated template folder")
 		status.AddStatus(sdk.StatusFailure, "remove custom 'templates' folder", sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
@@ -100,7 +119,12 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Println("parseYAML ", err.Error())
 		status.AddStatus(sdk.StatusFailure, "parseYAML error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
@@ -108,7 +132,12 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Println("Error fetching templates ", err.Error())
 		status.AddStatus(sdk.StatusFailure, "fetchTemplates error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
@@ -117,7 +146,12 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Println("Shrinkwrap ", err.Error())
 		status.AddStatus(sdk.StatusFailure, "shrinkwrap error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
@@ -126,7 +160,12 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Println("Error creating tar(s): ", err.Error())
 		status.AddStatus(sdk.StatusFailure, "tar(s) creation failed, error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
@@ -134,20 +173,35 @@ func Handle(req []byte) []byte {
 	if err != nil {
 		log.Printf("Error parsing secrets: %s\n", err.Error())
 		status.AddStatus(sdk.StatusFailure, "failed to parse secrets, error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		os.Exit(-1)
 	}
 
 	err = deploy(tars, pushEvent, stack, status, payloadSecret)
 	if err != nil {
 		status.AddStatus(sdk.StatusFailure, "deploy failed, error : "+err.Error(), sdk.StackContext)
-		reportStatus(status)
+		if pushEvent.SCM == "github" {
+			reportStatus(status)
+		}
+		if pushEvent.SCM == "gitlab" {
+			reportGitLabStatus(status)
+		}
 		log.Printf("deploy error: %s", err)
 		os.Exit(-1)
 	}
 
 	status.AddStatus(sdk.StatusSuccess, "stack is successfully deployed", sdk.StackContext)
-	reportStatus(status)
+	if pushEvent.SCM == "github" {
+		reportStatus(status)
+	}
+	if pushEvent.SCM == "gitlab" {
+		reportGitLabStatus(status)
+	}
 
 	err = collect(pushEvent, stack)
 	if err != nil {
@@ -321,4 +375,36 @@ func getRawURL(scm string, repositoryURL string, repositoryOwnerLogin string, re
 	}
 
 	return rawURL, nil
+}
+
+// Needs adding changes to git-lab and merging of gitlab-status function
+func reportGitLabStatus(status *sdk.Status) {
+
+	if !enableStatusReporting() {
+		return
+	}
+
+	suffix := os.Getenv("dns_suffix")
+	gatewayURL := os.Getenv("gateway_url")
+	gatewayURL = sdk.CreateServiceURL(gatewayURL, suffix)
+
+	statusBytes, _ := json.Marshal(status)
+	statusReader := bytes.NewReader(statusBytes)
+	req, reqErr := http.NewRequest(http.MethodPost, gatewayURL+"function/gitlab-status", statusReader)
+	if reqErr != nil {
+		fmt.Printf("Unexpected error: `%s`", reqErr.Error())
+	}
+
+	client := http.Client{}
+
+	res, resErr := client.Do(req)
+	if resErr != nil {
+		fmt.Printf("Unexpected error: `%s`", resErr.Error())
+	}
+	defer res.Body.Close()
+
+	_, bodyErr := ioutil.ReadAll(res.Body)
+	if bodyErr != nil {
+		fmt.Printf("Unexpected error: `%s`", bodyErr.Error())
+	}
 }
